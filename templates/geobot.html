@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GeoBot - AI Geography Assistant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #2A6B76;
+      --primary-light: #3D8E9C;
+      --primary-dark: #1A4A53;
+      --secondary: #F0C808;
+      --secondary-light: #F9E076;
+      --accent: #E55812;
+      --light: #F8F9FA;
+      --dark: #212529;
+      --gray: #6C757D;
+      --gray-light: #CED4DA;
+      --success: #28A745;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
+      color: var(--light);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* Animated background */
+    .background-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .background-pattern {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(61, 142, 156, 0.1) 0%, transparent 20%),
+        radial-gradient(circle at 85% 30%, rgba(240, 200, 8, 0.1) 0%, transparent 20%),
+        radial-gradient(circle at 50% 80%, rgba(229, 88, 18, 0.1) 0%, transparent 20%);
+      background-size: 100% 100%;
+      opacity: 0.7;
+    }
+
+    .floating-shape {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      animation: float 15s infinite ease-in-out;
+    }
+
+    .shape-1 {
+      width: 300px;
+      height: 300px;
+      top: -150px;
+      left: -150px;
+      animation-delay: 0s;
+    }
+
+    .shape-2 {
+      width: 200px;
+      height: 200px;
+      bottom: 50px;
+      right: -100px;
+      animation-delay: -5s;
+    }
+
+    .shape-3 {
+      width: 150px;
+      height: 150px;
+      top: 30%;
+      left: 80%;
+      animation-delay: -10s;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(10deg); }
+    }
+
+    /* Layout */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Header */
+    .header {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 30px 20px 20px;
+      background: rgba(26, 74, 83, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .header-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      font-size: 32px;
+      color: var(--secondary);
+    }
+
+    .header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(36px, 6vw, 56px);
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .accent-text {
+      color: var(--secondary);
+    }
+
+    .subtitle {
+      font-size: 18px;
+      color: var(--gray-light);
+      font-weight: 400;
+      max-width: 600px;
+    }
+
+    /* Navigation */
+    .nav-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin-top: 20px;
+      background: rgba(26, 74, 83, 0.6);
+      border-radius: 12px;
+      padding: 5px;
+      width: fit-content;
+    }
+
+    .nav-tab {
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: transparent;
+      border: none;
+      color: var(--gray-light);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .nav-tab:hover {
+      color: var(--light);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-tab.active {
+      color: var(--primary-dark);
+      background: var(--secondary);
+    }
+
+    /* Main content */
+    .main-content {
+      position: relative;
+      z-index: 10;
+      padding: 30px 0;
+    }
+
+    /* Chat container */
+    .chat-container {
+      background: rgba(248, 249, 250, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      margin-bottom: 30px;
+    }
+
+    .chat-header {
+      background: var(--primary);
+      padding: 15px 25px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .chat-title {
+      font-size: 18px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+
+    .chat-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .chat-action-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .chat-action-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    /* Chat messages */
+    .chat-messages {
+      height: 400px;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .message {
+      display: flex;
+      max-width: 80%;
+      animation: fadeInUp 0.3s ease-out;
+    }
+
+    .message.user {
+      align-self: flex-end;
+    }
+
+    .message.bot {
+      align-self: flex-start;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message-bubble {
+      padding: 12px 18px;
+      border-radius: 18px;
+      position: relative;
+      word-wrap: break-word;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .message.user .message-bubble {
+      background: var(--primary);
+      color: white;
+      border-bottom-right-radius: 5px;
+    }
+
+    .message.bot .message-bubble {
+      background: white;
+      color: var(--dark);
+      border: 1px solid var(--gray-light);
+      border-bottom-left-radius: 5px;
+    }
+
+    .message-time {
+      font-size: 11px;
+      color: var(--gray);
+      margin-top: 5px;
+      text-align: right;
+    }
+
+    .message.bot .message-time {
+      text-align: left;
+    }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: none;
+      align-self: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .typing-indicator .message-bubble {
+      background: white;
+      border: 1px solid var(--gray-light);
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .typing-text {
+      color: var(--gray);
+      font-size: 14px;
+    }
+
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+    }
+
+    .typing-dots span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      animation: typing 1.5s infinite ease-in-out;
+    }
+
+    .typing-dots span:nth-child(1) { animation-delay: 0s; }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
+      30% { transform: translateY(-5px); opacity: 1; }
+    }
+
+    /* Input area */
+    .input-container {
+      display: flex;
+      gap: 10px;
+      padding: 20px;
+      background: white;
+      border-top: 1px solid var(--gray-light);
+      align-items: center;
+    }
+
+    .input-field {
+      flex: 1;
+      padding: 15px 20px;
+      border: 2px solid var(--gray-light);
+      border-radius: 25px;
+      background: white;
+      color: var(--dark);
+      font-size: 16px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .input-field:focus {
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(42, 107, 118, 0.1);
+    }
+
+    .input-field::placeholder {
+      color: var(--gray);
+    }
+
+    .submit-btn {
+      padding: 15px 25px;
+      background: var(--primary);
+      border: none;
+      border-radius: 25px;
+      color: white;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .submit-btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Mic button */
+    .mic-btn {
+      padding: 12px;
+      background: white;
+      border: 2px solid var(--gray-light);
+      border-radius: 50%;
+      color: var(--primary);
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 50px;
+      height: 50px;
+    }
+
+    .mic-btn:hover {
+      background: var(--primary-light);
+      border-color: var(--primary-light);
+      color: white;
+      transform: scale(1.05);
+    }
+
+    .mic-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .control-btn {
+      padding: 12px 24px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 25px;
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      backdrop-filter: blur(10px);
+    }
+
+    .control-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    /* Error message */
+    .error-message {
+      background: rgba(220, 53, 69, 0.1);
+      border: 1px solid rgba(220, 53, 69, 0.3);
+      color: #dc3545;
+      padding: 15px;
+      border-radius: 10px;
+      margin: 15px 0;
+      text-align: center;
+    }
+
+    /* Features section */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin: 40px 0;
+    }
+
+    .feature-card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 25px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .feature-icon {
+      font-size: 40px;
+      color: var(--secondary);
+      margin-bottom: 15px;
+    }
+
+    .feature-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .feature-desc {
+      font-size: 14px;
+      color: var(--gray-light);
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 20px;
+      margin-top: 40px;
+      color: var(--gray-light);
+      font-size: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Scrollbar */
+    .chat-messages::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .chat-messages::-webkit-scrollbar-track {
+      background: rgba(206, 212, 218, 0.3);
+      border-radius: 4px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+      background: var(--primary-light);
+      border-radius: 4px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .message {
+        max-width: 90%;
+      }
+      
+      .input-container {
+        flex-wrap: wrap;
+      }
+      
+      .mic-btn {
+        order: 3;
+        margin-top: 10px;
+      }
+      
+      .nav-tabs {
+        flex-wrap: wrap;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header {
+        padding: 20px 15px 15px;
+      }
+      
+      .chat-header {
+        padding: 12px 15px;
+      }
+      
+      .input-container {
+        padding: 15px;
+      }
+      
+      .submit-btn {
+        padding: 12px 20px;
+        min-width: auto;
+      }
+      
+      .controls {
+        gap: 10px;
+      }
+      
+      .control-btn {
+        padding: 10px 15px;
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Background -->
+  <div class="background-container">
+    <div class="background-pattern"></div>
+    <div class="floating-shape shape-1"></div>
+    <div class="floating-shape shape-2"></div>
+    <div class="floating-shape shape-3"></div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <div class="logo-icon"><i class="fas fa-globe-americas"></i></div>
+          <h1><span class="accent-text">Geo</span>Bot</h1>
+        </div>
+        <p class="subtitle">Your AI-powered geography assistant - Explore the world through conversation</p>
+        
+        <div class="nav-tabs">
+          <button class="nav-tab active">Chat</button>
+          <button class="nav-tab">Maps</button>
+          <button class="nav-tab">Resources</button>
+          <button class="nav-tab">About</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="container main-content">
+    <!-- Features -->
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-map-marked-alt"></i></div>
+        <h3 class="feature-title">Global Knowledge</h3>
+        <p class="feature-desc">Information about countries, cities, landmarks, and geographical features worldwide</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-chart-bar"></i></div>
+        <h3 class="feature-title">Statistics & Data</h3>
+        <p class="feature-desc">Access population, area, climate data and other demographic information</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-microphone"></i></div>
+        <h3 class="feature-title">Voice Interaction</h3>
+        <p class="feature-desc">Use your voice to ask questions and get spoken responses (coming soon)</p>
+      </div>
+    </div>
+
+    <!-- Chat container -->
+    <div class="chat-container">
+      <div class="chat-header">
+        <div class="chat-title">
+          <div class="status-indicator"></div>
+          GeoBot Assistant
+        </div>
+        <div class="chat-actions">
+          <button class="chat-action-btn"><i class="fas fa-cog"></i></button>
+          <button class="chat-action-btn"><i class="fas fa-expand"></i></button>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="message bot">
+          <div class="message-bubble">
+            Welcome to GeoBot! 🌍 I'm here to help you with geography questions. Ask me about countries, capitals, landmarks, climate, population, or any geographical topic you're curious about!
+          </div>
+          <div class="message-time" id="welcomeTime"></div>
+        </div>
+      </div>
+
+      <!-- Typing indicator -->
+      <div class="typing-indicator" id="typingIndicator">
+        <div class="message-bubble">
+          <div class="typing-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <span class="typing-text">GeoBot is thinking...</span>
+        </div>
+      </div>
+
+      <!-- Input area -->
+      <div class="input-container">
+        <input type="text" class="input-field" id="userInput"
+          placeholder="Ask me about geography... (e.g., What's the capital of France?)"
+          maxlength="500">
+        
+        <button class="mic-btn" id="micBtn" title="Voice Input">
+          <i class="fas fa-microphone"></i>
+        </button>
+
+        <button class="submit-btn" id="submitBtn" onclick="sendMessage()">
+          <i class="fas fa-paper-plane"></i> Send
+        </button>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="control-btn" onclick="clearChat()">
+        <i class="fas fa-broom"></i> Clear Chat
+      </button>
+      <button class="control-btn" onclick="showExamples()">
+        <i class="fas fa-lightbulb"></i> Example Questions
+      </button>
+      <button class="control-btn" onclick="showHelp()">
+        <i class="fas fa-question-circle"></i> Help
+      </button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="container">
+      <p>© 2023 GeoBot - AI Geography Assistant | Explore the world one question at a time</p>
+    </div>
+  </div>
+
+  <script>
+    let isProcessing = false;
+    const API_BASE_URL = 'http://localhost:5000';
+    let chatHistory = [];
+
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeApp();
+    });
+
+    function initializeApp() {
+      setWelcomeTime();
+      setupEventListeners();
+      scrollToBottom();
+    }
+
+    function setWelcomeTime() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('welcomeTime').textContent = timeString;
+    }
+
+    function setupEventListeners() {
+      const userInput = document.getElementById('userInput');
+      userInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !isProcessing) { sendMessage(); }
+      });
+
+      // Mic button event
+      document.getElementById('micBtn').addEventListener('click', startVoiceRecognition);
+      
+      // Nav tabs
+      const navTabs = document.querySelectorAll('.nav-tab');
+      navTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          navTabs.forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          // Here you would handle tab switching functionality
+        });
+      });
+    }
+
+    async function sendMessage() {
+      const userInput = document.getElementById('userInput');
+      const submitBtn = document.getElementById('submitBtn');
+      const message = userInput.value.trim();
+      if (!message || isProcessing) return;
+
+      isProcessing = true;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending';
+
+      addMessage(message, 'user');
+      chatHistory.push({type: 'user', message: message, timestamp: new Date()});
+      userInput.value = '';
+
+      showTypingIndicator();
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: message })
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const data = await response.json();
+
+        hideTypingIndicator();
+        if (data.response) {
+          addMessage(data.response, 'bot');
+          chatHistory.push({
+            type: 'bot',
+            message: data.response,
+            category: data.category || 'general',
+            timestamp: new Date()
+          });
+        } else {
+          throw new Error('No response received from server');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        hideTypingIndicator();
+        let errorMessage = "I'm having trouble connecting right now. ";
+        if (error.message.includes('Failed to fetch')) {
+          errorMessage += "Please make sure the backend server is running on localhost:5000.";
+          showErrorMessage("Backend server connection failed. Start the Flask server with: python app.py");
+        } else if (error.message.includes('HTTP 503')) {
+          errorMessage += "My AI system is temporarily unavailable. Please check the Gemini API configuration.";
+        } else {
+          errorMessage += "Please try again in a moment.";
+        }
+        addMessage(errorMessage, 'bot');
+      }
+
+      isProcessing = false;
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+      userInput.focus();
+    }
+
+    function addMessage(text, sender) {
+      const chatMessages = document.getElementById('chatMessages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${sender}`;
+      const now = new Date();
+      const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      messageDiv.innerHTML = `
+        <div class="message-bubble">${text}</div>
+        <div class="message-time">${timeString}</div>`;
+      chatMessages.appendChild(messageDiv);
+      scrollToBottom();
+    }
+
+    function showTypingIndicator() {
+      document.getElementById('typingIndicator').style.display = 'flex';
+      scrollToBottom();
+    }
+
+    function hideTypingIndicator() {
+      document.getElementById('typingIndicator').style.display = 'none';
+    }
+
+    function scrollToBottom() {
+      const chatMessages = document.getElementById('chatMessages');
+      setTimeout(() => { chatMessages.scrollTop = chatMessages.scrollHeight; }, 100);
+    }
+
+    function showErrorMessage(message) {
+      const chatMessages = document.getElementById('chatMessages');
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'error-message';
+      errorDiv.textContent = message;
+      chatMessages.appendChild(errorDiv);
+      scrollToBottom();
+    }
+
+    function clearChat() {
+      const chatMessages = document.getElementById('chatMessages');
+      chatMessages.innerHTML = `
+        <div class="message bot">
+          <div class="message-bubble">
+            Chat cleared! How can I help you with geography today?
+          </div>
+          <div class="message-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+        </div>`;
+      chatHistory = [];
+      scrollToBottom();
+    }
+
+    async function showExamples() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/examples`);
+        if (response.ok) {
+          const data = await response.json();
+          const examples = data.examples.map(ex => `• ${ex.question}`).join('\n');
+          addMessage(`Here are some geography questions you can ask me:\n\n${examples}`, 'bot');
+        } else throw new Error('Failed to fetch examples');
+      } catch (error) {
+        const fallbackExamples = [
+          "What's the capital of Australia?",
+          "Tell me about Mount Everest",
+          "What's the population of Tokyo?",
+          "Which countries border Germany?",
+          "Explain the Amazon rainforest ecosystem"
+        ];
+        const examples = fallbackExamples.map(ex => `• ${ex}`).join('\n');
+        addMessage(`Here are some example questions you can ask me:\n\n${examples}\n\n(Backend examples service is not available, showing local examples)`, 'bot');
+      }
+    }
+
+    function showHelp() {
+      const helpText = `Here's how to use GeoBot:
+      
+• Type your question in the input box and press Enter or click Send
+• Click 🎤 to use voice input (speech-to-text)
+• Click "Clear Chat" to reset the conversation
+• Click "Example Questions" to see suggestions
+• You can ask about countries, capitals, landmarks, population, climate, or any geography topic
+
+Example: "What is the capital of Brazil?"`;
+      addMessage(helpText, 'bot');
+    }
+
+    // Voice recognition
+    function startVoiceRecognition() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert("Sorry, your browser does not support speech recognition.");
+        return;
+      }
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.start();
+
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById('userInput').value = transcript;
+      };
+
+      recognition.onerror = function(event) {
+        console.error("Speech recognition error:", event.error);
+        alert("Voice recognition error: " + event.error);
+      };
+    }
+  </script>
+</body>
+</html>
