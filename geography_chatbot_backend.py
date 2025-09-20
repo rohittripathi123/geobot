@@ -148,16 +148,18 @@ def home():
 
 if __name__ == "__main__":
     print("🚀 Starting GeoBot server...")
-    print("🌐 Server running on: http://127.0.0.1:5000")
     
     # Check if HTML file exists and show status
     html_file = find_html_file()
     if html_file:
         print(f"🌍 GeoBot interface found: {os.path.basename(html_file)}")
-        print("📱 Visit http://127.0.0.1:5000 to use GeoBot!")
     else:
         print("⚠️ geobot.html not found - check file location")
     
-    # Start Flask server
-    port = int(os.environ.get("PORT", 5000))  
-    app.run(host="0.0.0.0", port=port, debug=False)
+    # Only run development server locally, not in production
+    port = int(os.environ.get("PORT", 5000))
+    if os.environ.get("RAILWAY_ENVIRONMENT_NAME"):
+        print("🚂 Running on Railway - Gunicorn will handle the server")
+    else:
+        print(f"🌐 Local development server starting on: http://127.0.0.1:{port}")
+        app.run(host="0.0.0.0", port=port, debug=False)
