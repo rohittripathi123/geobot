@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GeoBot - AI Geography Assistant</title>
+  <style>
+    /* Base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(180deg, #2d1b16 0%, #0a0505 100%);
+      color: white;
+      overflow-x: hidden;
+    }
+
+    /* Animated background particles */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: rgba(255, 140, 0, 0.3);
+      border-radius: 50%;
+      animation: float 6s infinite ease-in-out;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0; }
+      50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+    }
+
+    /* Header */
+    .header {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 40px 20px 20px;
+      background: rgba(45, 27, 22, 0.8);
+      backdrop-filter: blur(10px);
+    }
+
+    .header h1 {
+    font-size: clamp(48px, 8vw, 72px); /* doubled from before */
+    font-weight: 700;
+    margin-bottom: 10px;
+    }
+
+
+    .orange-text {
+      color: #ff8c00;
+      background: linear-gradient(135deg, #ff8c00, #ffa500);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: #b8b8b8;
+      font-weight: 400;
+    }
+
+    /* Main chat */
+    .chat-container {
+      position: relative;
+      z-index: 10;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 20px;
+      height: calc(100vh - 200px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      background: rgba(10, 5, 5, 0.3);
+      border-radius: 15px;
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 140, 0, 0.1);
+    }
+
+    .message {
+      margin-bottom: 20px;
+      animation: fadeInUp 0.3s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user { text-align: right; margin-left: 30%; }
+    .message.bot { text-align: left; margin-right: 30%; }
+
+    .message-bubble {
+      display: inline-block;
+      padding: 12px 18px;
+      border-radius: 20px;
+      max-width: 100%;
+      word-wrap: break-word;
+      position: relative;
+    }
+
+    .message.user .message-bubble {
+      background: linear-gradient(135deg, #ff8c00, #ffa500);
+      color: white;
+      border-bottom-right-radius: 5px;
+    }
+
+    .message.bot .message-bubble {
+      background: rgba(45, 27, 22, 0.8);
+      color: #ffffff;
+      border: 1px solid rgba(255, 140, 0, 0.2);
+      border-bottom-left-radius: 5px;
+    }
+
+    .message-time {
+      font-size: 12px;
+      color: #b8b8b8;
+      margin-top: 5px;
+    }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: none;
+      text-align: left;
+      margin-bottom: 20px;
+      margin-right: 30%;
+    }
+
+    .typing-indicator .message-bubble {
+      background: rgba(45, 27, 22, 0.8);
+      border: 1px solid rgba(255, 140, 0, 0.2);
+      padding: 15px 20px;
+    }
+
+    .typing-dots span {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff8c00;
+      margin: 0 2px;
+      animation: typing 1.5s infinite ease-in-out;
+    }
+
+    .typing-dots span:nth-child(1) { animation-delay: 0s; }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
+      30% { transform: translateY(-10px); opacity: 1; }
+    }
+
+    /* Input area */
+    .input-container {
+      display: flex;
+      gap: 10px;
+      padding: 20px;
+      background: rgba(45, 27, 22, 0.8);
+      border-radius: 15px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 140, 0, 0.1);
+      align-items: center;
+    }
+
+    .input-field {
+      flex: 1;
+      padding: 15px 20px;
+      border: 2px solid rgba(255, 140, 0, 0.3);
+      border-radius: 25px;
+      background: rgba(10, 5, 5, 0.5);
+      color: white;
+      font-size: 16px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .input-field:focus {
+      border-color: #ff8c00;
+      box-shadow: 0 0 15px rgba(255, 140, 0, 0.3);
+    }
+
+    .input-field::placeholder { color: #b8b8b8; }
+
+    .submit-btn {
+      padding: 15px 25px;
+      background: linear-gradient(135deg, #ff8c00, #ffa500);
+      border: none;
+      border-radius: 25px;
+      color: white;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 100px;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255, 140, 0, 0.4);
+    }
+
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* Microphone button */
+    .mic-btn {
+      padding: 12px 18px;
+      background: rgba(45, 27, 22, 0.8);
+      border: 2px solid rgba(255, 140, 0, 0.3);
+      border-radius: 50%;
+      color: #ff8c00;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .mic-btn:hover {
+      background: rgba(255, 140, 0, 0.2);
+      border-color: #ff8c00;
+      transform: scale(1.1);
+    }
+
+    .mic-btn:active { transform: scale(0.95); }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .control-btn {
+      padding: 10px 20px;
+      background: rgba(45, 27, 22, 0.8);
+      border: 1px solid rgba(255, 140, 0, 0.3);
+      border-radius: 20px;
+      color: #b8b8b8;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .control-btn:hover {
+      border-color: #ff8c00;
+      color: white;
+      background: rgba(255, 140, 0, 0.1);
+    }
+
+    /* Error */
+    .error-message {
+      background: rgba(220, 53, 69, 0.2);
+      border: 1px solid rgba(220, 53, 69, 0.5);
+      color: #ff6b6b;
+      padding: 15px;
+      border-radius: 10px;
+      margin: 15px 0;
+      text-align: center;
+    }
+
+    /* Scrollbar */
+    .chat-messages::-webkit-scrollbar { width: 8px; }
+    .chat-messages::-webkit-scrollbar-track {
+      background: rgba(45, 27, 22, 0.3);
+      border-radius: 4px;
+    }
+    .chat-messages::-webkit-scrollbar-thumb {
+      background: rgba(255, 140, 0, 0.5);
+      border-radius: 4px;
+    }
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 140, 0, 0.7);
+    }
+  </style>
+</head>
+<body>
+  <!-- Background -->
+  <div class="particles" id="particles"></div>
+
+  <!-- Header -->
+  <div class="header">
+    <h1><span class="orange-text">Geo</span>Bot</h1>
+    <p class="subtitle">Your AI-powered geography assistant</p>
+  </div>
+
+  <!-- Chat -->
+  <div class="chat-container">
+    <div class="chat-messages" id="chatMessages">
+      <div class="message bot">
+        <div class="message-bubble">
+          Welcome to GeoBot! 🌍 I'm here to help you with geography questions. Ask me about countries, capitals, landmarks, climate, population, or any geographical topic you're curious about!
+        </div>
+        <div class="message-time" id="welcomeTime"></div>
+      </div>
+    </div>
+
+    <!-- Typing -->
+    <div class="typing-indicator" id="typingIndicator">
+      <div class="message-bubble">
+        <div class="typing-dots">
+          <span></span><span></span><span></span>
+        </div>
+        GeoBot is thinking...
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-container">
+      <input type="text" class="input-field" id="userInput"
+        placeholder="Ask me about geography... (e.g., What's the capital of France?)"
+        maxlength="500">
+
+      <!-- Mic button -->
+      <button class="mic-btn" id="micBtn" title="Voice Input">🎤</button>
+
+      <button class="submit-btn" id="submitBtn" onclick="sendMessage()">Send</button>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="control-btn" onclick="clearChat()">Clear Chat</button>
+      <button class="control-btn" onclick="showExamples()">Example Questions</button>
+      <button class="control-btn" onclick="showHelp()">Help</button>
+    </div>
+  </div>
+
+  <script>
+    let isProcessing = false;
+    const API_BASE_URL = 'http://localhost:5000';
+    let chatHistory = [];
+
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeApp();
+    });
+
+    function initializeApp() {
+      createParticles();
+      setWelcomeTime();
+      setupEventListeners();
+      scrollToBottom();
+    }
+
+    function createParticles() {
+      const particlesContainer = document.getElementById('particles');
+      const particleCount = 15;
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.top = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 6 + 's';
+        particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
+        particlesContainer.appendChild(particle);
+      }
+    }
+
+    function setWelcomeTime() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('welcomeTime').textContent = timeString;
+    }
+
+    function setupEventListeners() {
+      const userInput = document.getElementById('userInput');
+      userInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !isProcessing) { sendMessage(); }
+      });
+
+      // Mic button event
+      document.getElementById('micBtn').addEventListener('click', startVoiceRecognition);
+    }
+
+    async function sendMessage() {
+      const userInput = document.getElementById('userInput');
+      const submitBtn = document.getElementById('submitBtn');
+      const message = userInput.value.trim();
+      if (!message || isProcessing) return;
+
+      isProcessing = true;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+
+      addMessage(message, 'user');
+      chatHistory.push({type: 'user', message: message, timestamp: new Date()});
+      userInput.value = '';
+
+      showTypingIndicator();
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: message })
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const data = await response.json();
+
+        hideTypingIndicator();
+        if (data.response) {
+          addMessage(data.response, 'bot');
+          chatHistory.push({
+            type: 'bot',
+            message: data.response,
+            category: data.category || 'general',
+            timestamp: new Date()
+          });
+        } else {
+          throw new Error('No response received from server');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        hideTypingIndicator();
+        let errorMessage = "I'm having trouble connecting right now. ";
+        if (error.message.includes('Failed to fetch')) {
+          errorMessage += "Please make sure the backend server is running on localhost:5000.";
+          showErrorMessage("Backend server connection failed. Start the Flask server with: python app.py");
+        } else if (error.message.includes('HTTP 503')) {
+          errorMessage += "My AI system is temporarily unavailable. Please check the Gemini API configuration.";
+        } else {
+          errorMessage += "Please try again in a moment.";
+        }
+        addMessage(errorMessage, 'bot');
+      }
+
+      isProcessing = false;
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send';
+      userInput.focus();
+    }
+
+    function addMessage(text, sender) {
+      const chatMessages = document.getElementById('chatMessages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${sender}`;
+      const now = new Date();
+      const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      messageDiv.innerHTML = `
+        <div class="message-bubble">${text}</div>
+        <div class="message-time">${timeString}</div>`;
+      chatMessages.appendChild(messageDiv);
+      scrollToBottom();
+    }
+
+    function showTypingIndicator() {
+      document.getElementById('typingIndicator').style.display = 'block';
+      scrollToBottom();
+    }
+
+    function hideTypingIndicator() {
+      document.getElementById('typingIndicator').style.display = 'none';
+    }
+
+    function scrollToBottom() {
+      const chatMessages = document.getElementById('chatMessages');
+      setTimeout(() => { chatMessages.scrollTop = chatMessages.scrollHeight; }, 100);
+    }
+
+    function showErrorMessage(message) {
+      const chatMessages = document.getElementById('chatMessages');
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'error-message';
+      errorDiv.textContent = message;
+      chatMessages.appendChild(errorDiv);
+      scrollToBottom();
+    }
+
+    function clearChat() {
+      const chatMessages = document.getElementById('chatMessages');
+      chatMessages.innerHTML = `
+        <div class="message bot">
+          <div class="message-bubble">
+            Chat cleared! How can I help you with geography today?
+          </div>
+          <div class="message-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+        </div>`;
+      chatHistory = [];
+      scrollToBottom();
+    }
+
+    async function showExamples() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/examples`);
+        if (response.ok) {
+          const data = await response.json();
+          const examples = data.examples.map(ex => `• ${ex.question}`).join('\n');
+          addMessage(`Here are some geography questions you can ask me:\n\n${examples}`, 'bot');
+        } else throw new Error('Failed to fetch examples');
+      } catch (error) {
+        const fallbackExamples = [
+          "What's the capital of Australia?",
+          "Tell me about Mount Everest",
+          "What's the population of Tokyo?",
+          "Which countries border Germany?",
+          "Explain the Amazon rainforest ecosystem"
+        ];
+        const examples = fallbackExamples.map(ex => `• ${ex}`).join('\n');
+        addMessage(`Here are some example questions you can ask me:\n\n${examples}\n\n(Backend examples service is not available, showing local examples)`, 'bot');
+      }
+    }
+
+    function showHelp() {
+      const helpText = `Here's how to use GeoBot:
+      
+• Type your question in the input box and press Enter or click Send
+• Click 🎤 to use voice input (speech-to-text)
+• Click "Clear Chat" to reset the conversation
+• Click "Example Questions" to see suggestions
+• You can ask about countries, capitals, landmarks, population, climate, or any geography topic
+
+Example: "What is the capital of Brazil?"`;
+      addMessage(helpText, 'bot');
+    }
+
+    // Voice recognition
+    function startVoiceRecognition() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert("Sorry, your browser does not support speech recognition.");
+        return;
+      }
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.start();
+
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById('userInput').value = transcript;
+      };
+
+      recognition.onerror = function(event) {
+        console.error("Speech recognition error:", event.error);
+        alert("Voice recognition error: " + event.error);
+      };
+    }
+  </script>
+</body>
+</html>
