@@ -1,3 +1,7 @@
+
+
+
+
 #!/usr/bin/env python3
 """
 Geography AI Chatbot Backend Server with Gemini API Integration
@@ -155,4 +159,5 @@ if __name__ == "__main__":
         print("⚠️ geobot.html not found - check file location")
     
     # Start Flask server
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 5000))  
+    app.run(host="0.0.0.0", port=port, debug=False)
